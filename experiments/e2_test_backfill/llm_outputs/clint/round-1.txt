@@ -1,0 +1,296 @@
+Here is a thorough pytest suite for `clint.arguments.Args`. It was written against the module's actual behaviour, including edge cases and a few long-standing quirks of the implementation (for example, list-valued `first_with` never matches index 0, and `get_with` on a missing value raises TypeError because `self.all[None]` is invalid). The tests assert the behaviour the code really has, so they will catch any regression that changes it.
+
+```python
+import pytest
+
+from clint import arguments
+
+
+def make(*args):
+    return arguments.Args(list(args), no_argv=True)
+
+
+# ---------- construction and basic protocol ----------
+
+def test_init_with_explicit_args():
+    a = arguments.Args(['x', 'y'], no_argv=True)
+    assert a.all == ['x', 'y']
+
+
+def test_init_no_argv_empty():
+    a = arguments.Args(no_argv=True)
+    assert a.all == []
+
+
+def test_len():
+    assert len(make('a', 'b', 'c')) == 3
+
+
+def test_len_empty():
+    assert len(make()) == 0
+
+
+def test_repr():
+    assert repr(make('a')) == "<args ['a']>"
+
+
+def test_getitem_returns_arg():
+    assert make('a', 'b')[1] == 'b'
+
+
+def test_getitem_out_of_range_returns_none():
+    assert make('a')[5] is None
+
+
+# ---------- get / get_with ----------
+
+def test_get_returns_item():
+    assert make('a', 'b').get(0) == 'a'
+
+
+def test_get_missing_returns_none():
+    assert make('a').get(9) is None
+
+
+def test_get_with_finds_containing_arg():
+    a = make('--output=file.txt', 'x')
+    assert a.get_with('output') == '--output=file.txt'
+
+
+def test_get_with_missing_raises_typeerror():
+    # self.all[None] is invalid indexing: the code raises TypeError
+    with pytest.raises(TypeError):
+        make('a', 'b').get_with('zzz')
+
+
+# ---------- first / first_with / first_without ----------
+
+def test_first_scalar_found():
+    assert make('a', 'b', 'c').first('b') == 1
+
+
+def test_first_scalar_missing():
+    assert make('a', 'b').first('z') is None
+
+
+def test_first_list_returns_first_matching_index():
+    # list items are tried in order: 'c' is found at index 2 and returned
+    assert make('a', 'b', 'c').first(['c', 'a']) == 2
+
+
+def test_first_list_all_missing():
+    assert make('a').first(['x', 'y']) is None
+
+
+def test_first_with_scalar():
+    assert make('--foo', 'bar').first_with('foo') == 0
+
+
+def test_first_with_scalar_missing():
+    assert make('bar').first_with('foo') is None
+
+
+def test_first_with_list_misses_index_zero_quirk():
+    # the list branch checks `if found:` so a match at index 0 is lost
+    a = make('--foo', 'bar')
+    assert a.first_with(['--f']) is None
+
+
+def test_first_with_list_matches_later_index():
+    a = make('bar', '--foo')
+    assert a.first_with(['--f']) == 1
+
+
+def test_first_without_scalar():
+    assert make('--a', 'plain', 'other').first_without('-') == 1
+
+
+def test_first_without_all_contain():
+    assert make('-a', '-b').first_without('-') is None
+
+
+# ---------- contains / any_contain / contains_at ----------
+
+def test_contains_true():
+    assert make('a', 'b').contains('b') is True
+
+
+def test_contains_false():
+    assert make('a', 'b').contains('z') is False
+
+
+def test_dunder_contains():
+    assert 'a' in make('a', 'b')
+
+
+def test_any_contain_true():
+    assert make('plain', '--output=x').any_contain('output') is True
+
+
+def test_any_contain_index_zero_quirk():
+    # bool(first_with(x)) is False when the only match sits at index 0
+    assert make('--output=x').any_contain('output') is False
+
+
+def test_any_contain_false():
+    assert make('plain').any_contain('output') is False
+
+
+def test_contains_at_match():
+    assert make('abc', 'def').contains_at('bc', 0) is True
+
+
+def test_contains_at_no_match():
+    assert make('abc', 'def').contains_at('zz', 0) is False
+
+
+def test_contains_at_out_of_range():
+    assert make('a').contains_at('a', 7) is False
+
+
+def test_contains_at_list_first_item_decides():
+    # only the first list item is examined: it returns after it
+    a = make('abc')
+    assert a.contains_at(['bc', 'zz'], 0) is True
+    assert a.contains_at(['zz', 'bc'], 0) is False
+
+
+# ---------- has / pop / remove / value_after / last ----------
+
+def test_has_valid_index():
+    assert make('a', 'b').has(1) is True
+
+
+def test_has_invalid_index():
+    assert make('a').has(4) is False
+
+
+def test_pop_returns_and_removes():
+    a = make('a', 'b', 'c')
+    assert a.pop(1) == 'b'
+    assert a.all == ['a', 'c']
+
+
+def test_pop_missing_returns_none():
+    assert make('a').pop(9) is None
+
+
+def test_remove_scalar():
+    a = make('a', 'b', 'c')
+    a.remove('b')
+    assert a.all == ['a', 'c']
+
+
+def test_remove_missing_is_noop():
+    a = make('a')
+    a.remove('zzz')
+    assert a.all == ['a']
+
+
+def test_remove_list_removes_matches():
+    a = make('a', 'b', 'c')
+    a.remove(['a', 'b'])
+    assert a.all == ['c']
+
+
+def test_value_after_returns_next():
+    assert make('--mode', 'fast', 'x').value_after('--mode') == 'fast'
+
+
+def test_value_after_last_returns_none():
+    assert make('a', '--flag').value_after('--flag') is None
+
+
+def test_value_after_missing_returns_none():
+    assert make('a').value_after('zzz') is None
+
+
+def test_last_property():
+    assert make('a', 'b').last == 'b'
+
+
+def test_last_empty_returns_none():
+    assert make().last is None
+
+
+# ---------- grouped / flags / not_flags ----------
+
+def test_grouped_separates_flags_and_values():
+    a = make('--opt1', 'val1', 'val2', '--opt2', 'val3')
+    groups = a.grouped
+    assert groups['--opt1'].all == ['val1', 'val2']
+    assert groups['--opt2'].all == ['val3']
+    assert groups['_'].all == []
+
+
+def test_grouped_leading_plain_args_go_to_default_group():
+    a = make('file.txt', '--verbose')
+    groups = a.grouped
+    assert groups['_'].all == ['file.txt']
+    assert groups['--verbose'].all == []
+
+
+def test_flags_property():
+    a = make('--verbose', 'file.txt', '--debug')
+    assert a.flags.all == ['--verbose', '--debug']
+
+
+def test_not_flags_property():
+    a = make('--verbose', 'file.txt')
+    assert a.not_flags.all == ['file.txt']
+
+
+def test_not_flags_excludes_args_containing_dash_anywhere():
+    # all_without('-') drops any arg containing '-', not just prefixes
+    a = make('has-dash', 'plain')
+    assert a.not_flags.all == ['plain']
+
+
+def test_start_with_scalar():
+    a = make('--foo', 'bar', '--fizz')
+    assert a.start_with('--').all == ['--foo', '--fizz']
+
+
+def test_start_with_list_raises_typeerror_quirk():
+    # the collection branch passes the whole list to str.startswith
+    with pytest.raises(TypeError):
+        make('--foo').start_with(['-', 'x'])
+
+
+# ---------- all_with / all_without ----------
+
+def test_all_with_scalar():
+    a = make('--out=a', 'plain', '--output=b')
+    assert a.all_with('out').all == ['--out=a', '--output=b']
+
+
+def test_all_with_list_any_match():
+    a = make('alpha', 'beta', 'gamma')
+    assert a.all_with(['alph', 'amm']).all == ['alpha', 'gamma']
+
+
+def test_all_without_scalar():
+    a = make('keep', 'drop-me')
+    assert a.all_without('drop').all == ['keep']
+
+
+def test_all_without_list():
+    a = make('alpha', 'beta', 'gamma')
+    assert a.all_without(['alph', 'eta']).all == ['gamma']
+
+
+# ---------- copy ----------
+
+def test_copy_returns_args_instance():
+    a = make('x', 'y')
+    b = a.copy
+    assert isinstance(b, arguments.Args)
+    assert b.all == ['x', 'y']
+
+
+def test_copy_shares_list_reference_quirk():
+    # copy wraps the same underlying list (Args(self.all))
+    a = make('x')
+    b = a.copy
+    assert b.all is a.all
+```
