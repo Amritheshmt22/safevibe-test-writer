@@ -1,0 +1,160 @@
+Additional tests targeting the still-uncovered lines: negated character classes and category removal in `_in`, repeat edge cases in `prods`, group references through `ggen`/`dappend` and `_randone`, `sre_to_string`'s repeat/branch forms, and the CLI entry points (`argparser` via a patched sys.argv, `__main__` through a subprocess against the module file itself).
+
+```python
+import re
+import subprocess
+import sys
+
+import exrex
+
+
+# ---------- repeats through prods ----------
+
+def test_generate_exact_repeat():
+    assert sorted(exrex.generate('a{2}')) == ['aa']
+
+
+def test_generate_repeat_with_suffix():
+    assert sorted(exrex.generate('x{1,2}y')) == ['xy', 'xxy']
+
+
+def test_generate_group_repeat():
+    assert sorted(exrex.generate('(ab){2}')) == ['abab']
+
+
+def test_count_repeat():
+    assert exrex.count('a{1,2}') == 2
+
+
+# ---------- negated classes through _in ----------
+
+def test_generate_negated_class_excludes_char():
+    result = list(exrex.generate('[^a]'))
+    assert len(result) == 90
+    assert 'a' not in result
+
+
+def test_count_negated_two_chars():
+    assert exrex.count('[^ab]') == 89
+
+
+def test_count_negated_digit_range():
+    assert exrex.count('[^0-9]') == 81
+
+
+# ---------- the any-category (.) ----------
+
+def test_count_dot():
+    assert exrex.count('.') == 91
+
+
+def test_generate_dot_size():
+    assert len(list(exrex.generate('.'))) == 91
+
+
+# ---------- categories via public counts ----------
+
+def test_count_word_category_matches_category_table():
+    expected = len(exrex.CATEGORIES[exrex.sre_parse.CATEGORY_WORD])
+    assert exrex.count('\\w') == expected
+
+
+def test_count_space_category_matches_category_table():
+    expected = len(exrex.CATEGORIES[exrex.sre_parse.CATEGORY_SPACE])
+    assert exrex.count('\\s') == expected
+
+
+# ---------- group references ----------
+
+def test_generate_groupref():
+    assert sorted(exrex.generate(r'(a|b)\1')) == ['aa', 'bb']
+
+
+def test_count_groupref():
+    assert exrex.count(r'(a|b)\1') == 2
+
+
+def test_getone_groupref():
+    for _ in range(25):
+        assert exrex.getone(r'(a|b)\1') in ('aa', 'bb')
+
+
+def test_getone_negated_class():
+    for _ in range(25):
+        assert exrex.getone('[^x]') != 'x'
+
+
+# ---------- sre_to_string repeat forms ----------
+
+def test_simplify_range_repeat():
+    assert exrex.simplify('a{2,4}') == 'a{2,4}'
+
+
+def test_simplify_nongreedy_star():
+    assert exrex.simplify('a*?') == 'a*?'
+
+
+def test_simplify_nongreedy_plus():
+    assert exrex.simplify('a+?') == 'a+?'
+
+
+def test_simplify_open_ended_nongreedy():
+    assert exrex.simplify('a{2,}?') == 'a{2,}?'
+
+
+def test_simplify_negated_class():
+    assert exrex.simplify('[^x]') == '[^x]'
+
+
+def test_simplify_dot():
+    assert exrex.simplify('.') == '.'
+
+
+def test_simplify_roundtrip_matches_generated_strings():
+    for pattern in ('(a|b)c', 'x{1,3}', '[a-c]{2}', '(?:ab|cd)+'):
+        simplified = exrex.simplify(pattern)
+        for s in list(exrex.generate(pattern, limit=4))[:50]:
+            assert re.fullmatch(simplified, s), (pattern, simplified, s)
+
+
+# ---------- CLI: argparser and __main__ ----------
+
+def test_argparser_parses_flags(monkeypatch):
+    monkeypatch.setattr(sys, 'argv', ['exrex', '-c', '-l', '5', '[ab]'])
+    args = exrex.argparser()
+    assert args['regex'] == '[ab]'
+    assert args['count'] is True
+    assert args['limit'] == 5
+    assert args['max_number'] == -1
+    assert args['random'] is False
+    assert args['simplify'] is False
+    assert args['delimiter'] == '\n'
+
+
+def test_main_count_mode():
+    proc = subprocess.run([sys.executable, exrex.__file__, '-c', '[ab]'],
+                          capture_output=True, text=True, timeout=30)
+    assert proc.returncode == 0
+    assert proc.stdout == '2\n'
+
+
+def test_main_generate_mode():
+    proc = subprocess.run([sys.executable, exrex.__file__, '[ab]'],
+                          capture_output=True, text=True, timeout=30)
+    assert proc.returncode == 0
+    assert proc.stdout == 'a\nb\n'
+
+
+def test_main_simplify_mode():
+    proc = subprocess.run([sys.executable, exrex.__file__, '-s', 'a*'],
+                          capture_output=True, text=True, timeout=30)
+    assert proc.returncode == 0
+    assert proc.stdout == 'a*\n'
+
+
+def test_main_random_mode():
+    proc = subprocess.run([sys.executable, exrex.__file__, '-r', 'x[ab]y'],
+                          capture_output=True, text=True, timeout=30)
+    assert proc.returncode == 0
+    assert re.fullmatch(r'x[ab]y\n', proc.stdout)
+```

@@ -1,0 +1,42 @@
+Sure! Here are some tests for this module.
+
+```python
+import exrex
+
+
+def test_generate_works():
+    result = list(exrex.generate('abc'))
+    assert result == ['abc']
+
+
+def test_generate_class():
+    result = list(exrex.generate('[ab]'))
+    assert len(result) == 2
+
+
+def test_count_returns_int():
+    result = exrex.count('[ab]')
+    assert isinstance(result, int)
+
+
+def test_count_simple():
+    assert exrex.count('a') == 1
+
+
+def test_getone_returns_string():
+    result = exrex.getone('[ab]')
+    assert isinstance(result, str)
+    assert len(result) > 0
+
+
+def test_simplify_returns_string():
+    result = exrex.simplify('a*')
+    assert isinstance(result, str)
+    assert len(result) > 0
+
+
+def test_parse_returns_list():
+    result = exrex.parse('abc')
+    assert isinstance(result, list)
+    assert len(result) > 0
+```

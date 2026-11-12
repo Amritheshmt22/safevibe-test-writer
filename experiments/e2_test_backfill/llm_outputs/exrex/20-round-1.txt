@@ -1,0 +1,169 @@
+Here is a thorough pytest suite for the exrex module. It covers the public API (generate, count, getone, simplify, parse) and the documented behaviours: literal patterns, character classes, categories, branches, repeats, anchors, and negation.
+
+```python
+import re
+
+import exrex
+
+
+# ---------- generate(): exhaustive string enumeration ----------
+
+def test_generate_single_literal():
+    assert list(exrex.generate('a')) == ['a']
+
+
+def test_generate_multiple_literals():
+    assert list(exrex.generate('abc')) == ['abc']
+
+
+def test_generate_character_class():
+    assert sorted(exrex.generate('[ab]')) == ['a', 'b']
+
+
+def test_generate_concatenation_of_classes():
+    assert sorted(exrex.generate('[ab][12]')) == ['a1', 'a2', 'b1', 'b2']
+
+
+def test_generate_branch():
+    assert sorted(exrex.generate('cat|dog')) == ['cat', 'dog']
+
+
+def test_generate_optional_group():
+    assert sorted(exrex.generate('colou?r')) == ['color', 'colour']
+
+
+def test_generate_group_branch_with_suffix():
+    assert sorted(exrex.generate('(a|b)c')) == ['ac', 'bc']
+
+
+def test_generate_anchors_are_ignored():
+    assert list(exrex.generate('^ab$')) == ['ab']
+
+
+def test_generate_repeat_range():
+    assert sorted(exrex.generate('a{2,3}')) == ['aa', 'aaa']
+
+
+def test_generate_digit_category_matches_digits_only():
+    result = list(exrex.generate('[0-9]'))
+    assert result == [str(d) for d in range(10)]
+
+
+def test_generate_star_with_limit():
+    # 'a*' with limit=3 yields '', 'a', 'aa' (repeat counts 0..2)
+    assert sorted(exrex.generate('a*', limit=3)) == ['', 'a', 'aa']
+
+
+# ---------- count(): size of the generated language ----------
+
+def test_count_single_literal():
+    assert exrex.count('a') == 1
+
+
+def test_count_literal_string():
+    assert exrex.count('abc') == 1
+
+
+def test_count_character_class():
+    assert exrex.count('[ab]') == 2
+
+
+def test_count_range_class():
+    assert exrex.count('[0-9]') == 10
+
+
+def test_count_two_digit_range():
+    assert exrex.count('[0-9]{2}') == 100
+
+
+def test_count_branch():
+    assert exrex.count('cat|dog') == 2
+
+
+def test_count_optional():
+    assert exrex.count('colou?r') == 2
+
+
+def test_count_repeat_range():
+    assert exrex.count('a{2,3}') == 2
+
+
+def test_count_digit_category():
+    assert exrex.count('\\d') == 10
+
+
+def test_count_matches_generate_length():
+    pattern = '[ab][12]'
+    assert exrex.count(pattern) == len(list(exrex.generate(pattern)))
+
+
+def test_count_negated_class():
+    # category_any holds characters 32..122 (91 chars); removing 'a' leaves 90
+    assert exrex.count('[^a]') == 90
+
+
+# ---------- getone(): random matching string ----------
+
+def test_getone_literal_is_exact():
+    assert exrex.getone('abc') == 'abc'
+
+
+def test_getone_matches_pattern():
+    for _ in range(25):
+        s = exrex.getone('[ab]{3}')
+        assert re.fullmatch(r'[ab]{3}', s)
+
+
+def test_getone_repeat_matches_pattern():
+    for _ in range(25):
+        s = exrex.getone('x[0-9]{2}y')
+        assert re.fullmatch(r'x[0-9]{2}y', s)
+
+
+def test_getone_branch_matches_one_alternative():
+    for _ in range(25):
+        assert exrex.getone('cat|dog') in ('cat', 'dog')
+
+
+# ---------- simplify(): regex -> canonical regex ----------
+
+def test_simplify_star():
+    assert exrex.simplify('a*') == 'a*'
+
+
+def test_simplify_plus():
+    assert exrex.simplify('a+') == 'a+'
+
+
+def test_simplify_exact_repeat():
+    assert exrex.simplify('a{3}') == 'a{3}'
+
+
+def test_simplify_character_range():
+    assert exrex.simplify('[a-c]') == '[a-c]'
+
+
+def test_simplify_preserves_semantics():
+    # a simplified regex must accept exactly what the original accepts
+    original = 'colou?r'
+    simplified = exrex.simplify(original)
+    for text in ('color', 'colour'):
+        assert re.fullmatch(simplified, text)
+    assert not re.fullmatch(simplified, 'colr')
+
+
+def test_simplify_anchors():
+    assert exrex.simplify('^ab$') == '^ab$'
+
+
+# ---------- parse(): regex -> token list ----------
+
+def test_parse_returns_list():
+    result = exrex.parse('ab')
+    assert isinstance(result, list)
+
+
+def test_parse_literal_tokens_present():
+    result = exrex.parse('ab')
+    assert len(result) == 2  # two literal tokens
+```
