@@ -1,0 +1,76 @@
+Here are additional tests targeting the uncovered lines: the `st_blocks` fallback in `disk_used` (line 41), the `onerror` branch of `rmtree` (line 119), and the retry-once logic (lines 128-132). They use monkeypatching of `os.stat` and `shutil.rmtree` (standard library, not the module's own functions) to reach the platform fallback and the retry branches deterministically.
+
+```python
+import os
+import shutil
+
+import pytest
+
+from pox import _disk
+
+
+def test_disk_used_without_st_blocks_falls_back_to_size(monkeypatch, tmp_path):
+    # platform fallback (line 41): when st_blocks is missing, the size is
+    # approximated by rounding st_size up to a multiple of 512
+    class FakeStat:
+        st_size = 1000
+
+    monkeypatch.setattr(os, 'stat', lambda path: FakeStat())
+    # empty dir: only '.' is stat'ed -> (1000//512 + 1) * 512 = 1024 -> 1 KB
+    assert _disk.disk_used(str(tmp_path)) == 1
+
+
+def test_rmtree_onerror_handler_not_called_on_success(tmp_path):
+    calls = []
+
+    def handler(func, path, exc_info):
+        calls.append(func)
+
+    target = tmp_path / 'victim'
+    (target / 'sub').mkdir(parents=True)
+    _disk.rmtree(str(target), onerror=handler)
+    assert not target.exists()
+    assert calls == []  # no error -> handler never invoked
+
+
+def test_rmtree_retries_exactly_once_then_raises(monkeypatch, tmp_path):
+    calls = []
+
+    def always_fail(path, ignore_errors, onerror):
+        calls.append(path)
+        raise OSError('simulated failure')
+
+    monkeypatch.setattr(shutil, 'rmtree', always_fail)
+    target = tmp_path / 'victim'
+    (target / 'sub').mkdir(parents=True)
+    with pytest.raises(OSError):
+        _disk.rmtree(str(target))
+    # one initial attempt plus exactly one retry
+    assert len(calls) == 2
+
+
+def test_rmtree_retry_succeeds_after_one_failure(monkeypatch, tmp_path):
+    real_rmtree = shutil.rmtree
+    calls = []
+
+    def flaky(path, ignore_errors, onerror):
+        calls.append(path)
+        if len(calls) == 1:
+            raise OSError('simulated transient failure')
+        return real_rmtree(path, ignore_errors, onerror)
+
+    monkeypatch.setattr(shutil, 'rmtree', flaky)
+    target = tmp_path / 'victim'
+    (target / 'sub').mkdir(parents=True)
+    _disk.rmtree(str(target))
+    assert not target.exists()
+    assert len(calls) == 2
+
+
+def test_kbytes_zero():
+    assert _disk.kbytes('0K') == 0
+
+
+def test_kbytes_negative():
+    assert _disk.kbytes('-1K') == -1
+```

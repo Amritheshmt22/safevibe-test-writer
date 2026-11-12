@@ -1,0 +1,40 @@
+Sure! Here are some tests for the disk utilities in `pox/_disk.py`.
+
+```python
+from pox import _disk
+
+
+def test_kbytes_k():
+    assert _disk.kbytes('10K') == 10
+
+
+def test_kbytes_g():
+    assert _disk.kbytes('10G') == 10485760
+
+
+def test_kbytes_m():
+    result = _disk.kbytes('100M')
+    assert isinstance(result, int)
+
+
+def test_disk_used(tmp_path):
+    result = _disk.disk_used(str(tmp_path))
+    assert result >= 0
+
+
+def test_disk_used_returns_int(tmp_path):
+    result = _disk.disk_used(str(tmp_path))
+    assert isinstance(result, int)
+
+
+def test_rmtree(tmp_path):
+    d = tmp_path / 'testdir'
+    d.mkdir()
+    (d / 'sub').mkdir()
+    _disk.rmtree(str(d))
+    assert not d.exists()
+
+
+def test_rmtree_ignore_errors(tmp_path):
+    _disk.rmtree(str(tmp_path / 'missing'), ignore_errors=True)
+```

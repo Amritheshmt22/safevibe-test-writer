@@ -1,0 +1,135 @@
+Here is a thorough pytest suite for `pox._disk`. It covers `kbytes` conversions and error cases exactly, and `disk_used`/`rmtree` behaviour using real temporary directories (created inside pytest's own tmp_path fixture, so nothing touches the rest of the filesystem).
+
+```python
+import os
+
+import pytest
+
+from pox import _disk
+
+
+# ---------- kbytes: text -> kilobyte conversion ----------
+
+def test_kbytes_kilobytes():
+    assert _disk.kbytes('10K') == 10
+
+
+def test_kbytes_megabytes():
+    assert _disk.kbytes('500M') == 500 * 1024
+
+
+def test_kbytes_gigabytes():
+    assert _disk.kbytes('10G') == 10 * 1024 * 1024
+
+
+def test_kbytes_fractional_truncates_to_int():
+    # 1.5K = 1536 bytes -> 1 KB after int()
+    assert _disk.kbytes('1.5K') == 1
+
+
+def test_kbytes_two_and_half_megabytes():
+    # 2.5M = 2560K exactly
+    assert _disk.kbytes('2.5M') == 2560
+
+
+def test_kbytes_single_kilobyte():
+    assert _disk.kbytes('1K') == 1
+
+
+def test_kbytes_invalid_unit_raises_valueerror():
+    with pytest.raises(ValueError):
+        _disk.kbytes('10T')
+
+
+def test_kbytes_no_unit_raises_valueerror():
+    with pytest.raises(ValueError):
+        _disk.kbytes('10')
+
+
+def test_kbytes_non_numeric_raises_valueerror():
+    with pytest.raises(ValueError):
+        _disk.kbytes('abcK')
+
+
+def test_kbytes_error_message_mentions_literal():
+    with pytest.raises(ValueError) as excinfo:
+        _disk.kbytes('10T')
+    assert '10T' in str(excinfo.value)
+
+
+# ---------- disk_used: real directory sizes ----------
+
+def test_disk_used_empty_directory(tmp_path):
+    used = _disk.disk_used(str(tmp_path))
+    assert isinstance(used, int)
+    assert used >= 0
+
+
+def test_disk_used_counts_file_blocks(tmp_path):
+    f = tmp_path / 'data.bin'
+    f.write_bytes(b'x' * 8192)
+    empty = tmp_path / 'empty'
+    empty.mkdir()
+    assert _disk.disk_used(str(tmp_path)) > _disk.disk_used(str(empty))
+
+
+def test_disk_used_returns_int_for_file_dir(tmp_path):
+    (tmp_path / 'f.txt').write_text('hello')
+    used = _disk.disk_used(str(tmp_path))
+    assert isinstance(used, int)
+    assert used > 0
+
+
+# ---------- rmtree: recursive removal ----------
+
+def _tree(root):
+    (root / 'sub1').mkdir()
+    (root / 'sub1' / 'nested').mkdir()
+    (root / 'sub1' / 'nested' / 'leaf.txt').write_text('leaf')
+    (root / 'sub2').mkdir()
+    (root / 'top.txt').write_text('top')
+
+
+def test_rmtree_self_true_removes_root(tmp_path):
+    target = tmp_path / 'victim'
+    target.mkdir()
+    _tree(target)
+    _disk.rmtree(str(target))
+    assert not target.exists()
+
+
+def test_rmtree_self_false_keeps_root_removes_subdirs(tmp_path):
+    target = tmp_path / 'victim'
+    target.mkdir()
+    _tree(target)
+    _disk.rmtree(str(target), self=False)
+    assert target.exists()
+    assert not (target / 'sub1').exists()
+    assert not (target / 'sub2').exists()
+    # note: with self=False only subdirectories are removed;
+    # the top-level file is left in place by this implementation
+    assert (target / 'top.txt').exists()
+
+
+def test_rmtree_ignore_errors_on_missing_path(tmp_path):
+    missing = str(tmp_path / 'does-not-exist')
+    # must not raise
+    _disk.rmtree(missing, ignore_errors=True)
+
+
+def test_rmtree_missing_path_raises_by_default(tmp_path):
+    missing = str(tmp_path / 'does-not-exist')
+    with pytest.raises(OSError):
+        _disk.rmtree(missing)
+
+
+def test_rmtree_onerror_handler_called_with_listdir(tmp_path):
+    calls = []
+
+    def handler(func, path, exc_info):
+        calls.append(func)
+
+    missing = str(tmp_path / 'does-not-exist')
+    _disk.rmtree(missing, onerror=handler)
+    assert calls == [os.listdir]
+```
