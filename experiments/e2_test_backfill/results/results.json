@@ -1,0 +1,152 @@
+[
+  {
+    "arm": "baseline",
+    "repo": "clint",
+    "module": "clint/arguments.py",
+    "baseline_coverage": null,
+    "baseline_branch_coverage": null,
+    "baseline_mutation_score": null,
+    "final_coverage": 26.27986348122867,
+    "final_mutation_score": 0.12280701754385964,
+    "accepted_tests": 10,
+    "iterations": [
+      {
+        "round": 1,
+        "candidates_collected": 10,
+        "passing_real": 10,
+        "surviving_filter": 10,
+        "coverage_after": 26.27986348122867,
+        "duration_s": 19.48
+      }
+    ]
+  },
+  {
+    "arm": "loop",
+    "repo": "clint",
+    "module": "clint/arguments.py",
+    "baseline_coverage": 15.017064846416382,
+    "baseline_branch_coverage": 0.0,
+    "baseline_mutation_score": 0.008695652173913044,
+    "final_coverage": 94.19795221843003,
+    "final_mutation_score": 0.6140350877192983,
+    "accepted_tests": 35,
+    "iterations": [
+      {
+        "round": 1,
+        "candidates_collected": 56,
+        "passing_real": 55,
+        "surviving_filter": 29,
+        "coverage_after": 81.91126279863481,
+        "duration_s": 33.57
+      },
+      {
+        "round": 2,
+        "candidates_collected": 12,
+        "passing_real": 11,
+        "surviving_filter": 6,
+        "coverage_after": 94.19795221843003,
+        "duration_s": 21.86
+      }
+    ]
+  },
+  {
+    "arm": "baseline",
+    "repo": "exrex",
+    "module": "exrex.py",
+    "baseline_coverage": null,
+    "baseline_branch_coverage": null,
+    "baseline_mutation_score": null,
+    "final_coverage": 28.836424957841484,
+    "final_mutation_score": 0.13513513513513514,
+    "accepted_tests": 7,
+    "iterations": [
+      {
+        "round": 1,
+        "candidates_collected": 7,
+        "passing_real": 7,
+        "surviving_filter": 7,
+        "coverage_after": 28.836424957841484,
+        "duration_s": 23.37
+      }
+    ]
+  },
+  {
+    "arm": "loop",
+    "repo": "exrex",
+    "module": "exrex.py",
+    "baseline_coverage": null,
+    "baseline_branch_coverage": null,
+    "baseline_mutation_score": null,
+    "final_coverage": 77.40303541315346,
+    "final_mutation_score": 0.7432432432432432,
+    "accepted_tests": 44,
+    "iterations": [
+      {
+        "round": 1,
+        "candidates_collected": 34,
+        "passing_real": 34,
+        "surviving_filter": 21,
+        "coverage_after": 59.02192242833052,
+        "duration_s": 26.47
+      },
+      {
+        "round": 2,
+        "candidates_collected": 27,
+        "passing_real": 26,
+        "surviving_filter": 23,
+        "coverage_after": 77.40303541315346,
+        "duration_s": 35.55
+      }
+    ]
+  },
+  {
+    "arm": "baseline",
+    "repo": "pox",
+    "module": "pox/_disk.py",
+    "baseline_coverage": null,
+    "baseline_branch_coverage": null,
+    "baseline_mutation_score": null,
+    "final_coverage": 71.21212121212122,
+    "final_mutation_score": 0.38461538461538464,
+    "accepted_tests": 7,
+    "iterations": [
+      {
+        "round": 1,
+        "candidates_collected": 7,
+        "passing_real": 7,
+        "surviving_filter": 7,
+        "coverage_after": 71.21212121212122,
+        "duration_s": 6.77
+      }
+    ]
+  },
+  {
+    "arm": "loop",
+    "repo": "pox",
+    "module": "pox/_disk.py",
+    "baseline_coverage": null,
+    "baseline_branch_coverage": null,
+    "baseline_mutation_score": null,
+    "final_coverage": 100.0,
+    "final_mutation_score": 0.6923076923076923,
+    "accepted_tests": 14,
+    "iterations": [
+      {
+        "round": 1,
+        "candidates_collected": 18,
+        "passing_real": 17,
+        "surviving_filter": 9,
+        "coverage_after": 83.33333333333333,
+        "duration_s": 9.77
+      },
+      {
+        "round": 2,
+        "candidates_collected": 6,
+        "passing_real": 6,
+        "surviving_filter": 5,
+        "coverage_after": 100.0,
+        "duration_s": 12.69
+      }
+    ]
+  }
+]
