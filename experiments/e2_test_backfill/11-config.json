@@ -1,0 +1,35 @@
+{
+  "experiment": "E2 - test backfill quality (SafeVibe plan, section 6)",
+  "targets": [
+    {
+      "repo": "exrex",
+      "upstream": "https://github.com/asciimoo/exrex",
+      "commit": "f180f21e48f592544ed6d2ac2c0893f7d82c2966",
+      "source_root": "targets/exrex",
+      "module_relpath": "exrex.py",
+      "module_name": "exrex",
+      "import_stmt": "import exrex",
+      "existing_test_paths": []
+    },
+    {
+      "repo": "clint",
+      "upstream": "https://github.com/kennethreitz-archive/clint",
+      "commit": "9d3693d644b8587d985972b6075d970096f6439e",
+      "source_root": "targets/clint",
+      "module_relpath": "clint/arguments.py",
+      "module_name": "clint",
+      "import_stmt": "from clint import arguments",
+      "existing_test_paths": ["test_clint.py"]
+    },
+    {
+      "repo": "pox",
+      "upstream": "https://github.com/uqfoundation/pox",
+      "commit": "7e75686a10d787065ca269c9ee5a2afea396f0dd",
+      "source_root": "targets/pox",
+      "module_relpath": "pox/_disk.py",
+      "module_name": "pox",
+      "import_stmt": "from pox import _disk",
+      "existing_test_paths": []
+    }
+  ]
+}
