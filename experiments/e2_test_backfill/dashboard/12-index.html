@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<title>SafeVibe Test-Writer - E2 results</title>
+<style>
+body { font-family: -apple-system, 'Segoe UI', Roboto, sans-serif; margin: 2rem auto; max-width: 900px; color: #1f2328; }
+table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
+th, td { border: 1px solid #d0d7de; padding: 6px 10px; text-align: left; font-size: 14px; }
+th { background: #f6f8fa; }
+h1 { font-size: 1.5rem; } h2 { font-size: 1.15rem; margin-top: 2rem; }
+.note { color: #57606a; font-size: 13px; }
+</style></head><body>
+<h1>SafeVibe Test-Writer - experiment E2</h1>
+<p class="note">Every number on this page is recomputed from the artifact
+store (<code>results/store.sqlite</code>) by <code>testwriter report</code>.
+Grey bars: before / naive one-shot baseline. Green bars: after the
+iterative mutation-checked Test-Writer.</p>
+<h2>Per-repository results</h2>
+<table>
+<tr><th>repo</th><th>existing coverage</th><th>one-shot coverage</th>
+<th>Test-Writer coverage</th><th>one-shot mutation score</th>
+<th>Test-Writer mutation score</th><th>accepted tests</th></tr>
+<tr><td>clint</td><td>15.0%</td><td>26.3%</td><td>94.2%</td><td>12.3%</td><td>61.4%</td><td>35</td></tr><tr><td>exrex</td><td>n/a</td><td>28.8%</td><td>77.4%</td><td>13.5%</td><td>74.3%</td><td>44</td></tr><tr><td>pox</td><td>n/a</td><td>71.2%</td><td>100.0%</td><td>38.5%</td><td>69.2%</td><td>14</td></tr>
+</table>
+<h2>Coverage and mutation score</h2>
+<h3>clint / clint/arguments.py</h3>
+    <div class="bar-row">
+      <div class="bar-label">existing suite coverage</div>
+      <svg width="490" height="46" role="img">
+        <rect x="0" y="4" width="63.1" height="14" fill="#c9d1d9"/>
+        <text x="68.1" y="15" font-size="11" fill="#666">15.0%</text>
+        <rect x="0" y="24" width="63.1" height="14" fill="#2da44e"/>
+        <text x="68.1" y="35" font-size="11" fill="#1a7f37">15.0%</text>
+      </svg>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label">one-shot baseline -&gt; Test-Writer: line coverage</div>
+      <svg width="490" height="46" role="img">
+        <rect x="0" y="4" width="110.4" height="14" fill="#c9d1d9"/>
+        <text x="115.4" y="15" font-size="11" fill="#666">26.3%</text>
+        <rect x="0" y="24" width="395.6" height="14" fill="#2da44e"/>
+        <text x="400.6" y="35" font-size="11" fill="#1a7f37">94.2%</text>
+      </svg>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label">one-shot baseline -&gt; Test-Writer: mutation score</div>
+      <svg width="490" height="46" role="img">
+        <rect x="0" y="4" width="51.6" height="14" fill="#c9d1d9"/>
+        <text x="56.6" y="15" font-size="11" fill="#666">12.3%</text>
+        <rect x="0" y="24" width="257.9" height="14" fill="#2da44e"/>
+        <text x="262.9" y="35" font-size="11" fill="#1a7f37">61.4%</text>
+      </svg>
+    </div><h3>exrex / exrex.py</h3>
+    <div class="bar-row">
+      <div class="bar-label">existing suite coverage</div>
+      <svg width="490" height="46" role="img">
+        <rect x="0" y="4" width="0.0" height="14" fill="#c9d1d9"/>
+        <text x="5.0" y="15" font-size="11" fill="#666">n/a</text>
+        <rect x="0" y="24" width="0.0" height="14" fill="#2da44e"/>
+        <text x="5.0" y="35" font-size="11" fill="#1a7f37">n/a</text>
+      </svg>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label">one-shot baseline -&gt; Test-Writer: line coverage</div>
+      <svg width="490" height="46" role="img">
+        <rect x="0" y="4" width="121.1" height="14" fill="#c9d1d9"/>
+        <text x="126.1" y="15" font-size="11" fill="#666">28.8%</text>
+        <rect x="0" y="24" width="325.1" height="14" fill="#2da44e"/>
+        <text x="330.1" y="35" font-size="11" fill="#1a7f37">77.4%</text>
+      </svg>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label">one-shot baseline -&gt; Test-Writer: mutation score</div>
+      <svg width="490" height="46" role="img">
+        <rect x="0" y="4" width="56.8" height="14" fill="#c9d1d9"/>
+        <text x="61.8" y="15" font-size="11" fill="#666">13.5%</text>
+        <rect x="0" y="24" width="312.2" height="14" fill="#2da44e"/>
+        <text x="317.2" y="35" font-size="11" fill="#1a7f37">74.3%</text>
+      </svg>
+    </div><h3>pox / pox/_disk.py</h3>
+    <div class="bar-row">
+      <div class="bar-label">existing suite coverage</div>
+      <svg width="490" height="46" role="img">
+        <rect x="0" y="4" width="0.0" height="14" fill="#c9d1d9"/>
+        <text x="5.0" y="15" font-size="11" fill="#666">n/a</text>
+        <rect x="0" y="24" width="0.0" height="14" fill="#2da44e"/>
+        <text x="5.0" y="35" font-size="11" fill="#1a7f37">n/a</text>
+      </svg>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label">one-shot baseline -&gt; Test-Writer: line coverage</div>
+      <svg width="490" height="46" role="img">
+        <rect x="0" y="4" width="299.1" height="14" fill="#c9d1d9"/>
+        <text x="304.1" y="15" font-size="11" fill="#666">71.2%</text>
+        <rect x="0" y="24" width="420.0" height="14" fill="#2da44e"/>
+        <text x="425.0" y="35" font-size="11" fill="#1a7f37">100.0%</text>
+      </svg>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label">one-shot baseline -&gt; Test-Writer: mutation score</div>
+      <svg width="490" height="46" role="img">
+        <rect x="0" y="4" width="161.5" height="14" fill="#c9d1d9"/>
+        <text x="166.5" y="15" font-size="11" fill="#666">38.5%</text>
+        <rect x="0" y="24" width="290.8" height="14" fill="#2da44e"/>
+        <text x="295.8" y="35" font-size="11" fill="#1a7f37">69.2%</text>
+      </svg>
+    </div>
+</body></html>
