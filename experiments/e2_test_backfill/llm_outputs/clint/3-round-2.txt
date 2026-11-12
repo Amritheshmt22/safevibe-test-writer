@@ -1,0 +1,98 @@
+Additional tests for the still-uncovered lines: the `files`/`not_files` path-filtering properties (lines 325-349), the `sys.argv` fallback in `__init__` (line 33), and the collection branch of `first_without` (lines 156-164).
+
+```python
+import sys
+
+from clint import arguments
+
+
+def make(*args):
+    return arguments.Args(list(args), no_argv=True)
+
+
+# ---------- files property ----------
+
+def test_files_returns_only_existing_paths(tmp_path):
+    f = tmp_path / 'real.txt'
+    f.write_text('x')
+    a = make(str(f), 'does-not-exist.txt', '--flag')
+    assert a.files == [str(f)]
+
+
+def test_files_empty_when_nothing_exists():
+    assert make('zzz', '--flag').files == []
+
+
+def test_files_expands_globs(monkeypatch, tmp_path):
+    (tmp_path / 'a.txt').write_text('a')
+    (tmp_path / 'b.txt').write_text('b')
+    monkeypatch.chdir(tmp_path)
+    a = make('*.txt')
+    assert set(a.files) == {'a.txt', 'b.txt'}
+
+
+def test_files_multiple_existing(tmp_path):
+    f1 = tmp_path / 'one.txt'
+    f2 = tmp_path / 'two.txt'
+    f1.write_text('1')
+    f2.write_text('2')
+    a = make(str(f1), 'nope', str(f2))
+    assert a.files == [str(f1), str(f2)]
+
+
+# ---------- not_files property ----------
+
+def test_not_files_returns_nonexistent_args(tmp_path):
+    f = tmp_path / 'real.txt'
+    f.write_text('x')
+    a = make('zzz', str(f))
+    assert a.not_files.all == ['zzz']
+
+
+def test_not_files_includes_flags(tmp_path):
+    f = tmp_path / 'real.txt'
+    f.write_text('x')
+    a = make('--verbose', str(f))
+    assert a.not_files.all == ['--verbose']
+
+
+def test_not_files_empty_when_all_exist(tmp_path):
+    f = tmp_path / 'real.txt'
+    f.write_text('x')
+    a = make(str(f))
+    assert a.not_files.all == []
+
+
+# ---------- __init__ argv fallback ----------
+
+def test_init_falsy_args_falls_back_to_argv(monkeypatch):
+    monkeypatch.setattr(sys, 'argv', ['prog', 'a', 'b'])
+    a = arguments.Args([])
+    assert a.all == ['a', 'b']
+
+
+def test_init_falsy_args_with_no_argv_stays_empty():
+    a = arguments.Args([], no_argv=True)
+    assert a.all == []
+
+
+# ---------- first_without with a collection ----------
+
+def test_first_without_list_first_item_decides():
+    # the collection branch returns after the first list item that
+    # produces a truthy index
+    a = make('-a', '-b', 'c')
+    assert a.first_without(['x', '-']) == 2
+
+
+def test_first_without_list_all_contain():
+    assert make('-a', '-b').first_without(['-']) is None
+
+
+# ---------- grouped with plain args only ----------
+
+def test_grouped_plain_args_all_in_default_group():
+    groups = make('one', 'two').grouped
+    assert groups['_'].all == ['one', 'two']
+    assert list(groups.keys()) == ['_']
+```

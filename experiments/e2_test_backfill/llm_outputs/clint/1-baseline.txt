@@ -1,0 +1,55 @@
+Sure, here are some tests for the `Args` class in `clint/arguments.py`.
+
+```python
+from clint import arguments
+
+
+def make(*args):
+    return arguments.Args(list(args), no_argv=True)
+
+
+def test_args_creation():
+    a = make('a', 'b')
+    assert a is not None
+
+
+def test_len():
+    assert len(make('a', 'b', 'c')) == 3
+
+
+def test_all_returns_list():
+    a = make('x')
+    assert isinstance(a.all, list)
+
+
+def test_get():
+    assert make('a', 'b').get(0) == 'a'
+
+
+def test_get_missing():
+    assert make('a').get(5) is None
+
+
+def test_first():
+    assert make('a', 'b').first('b') == 1
+
+
+def test_contains():
+    assert make('a', 'b').contains('a')
+
+
+def test_last():
+    assert make('a', 'b').last == 'b'
+
+
+def test_pop():
+    a = make('a', 'b')
+    result = a.pop(0)
+    assert result == 'a'
+
+
+def test_flags():
+    a = make('--verbose', 'file.txt')
+    flags = a.flags
+    assert flags is not None
+```
